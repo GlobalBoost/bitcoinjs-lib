@@ -3,6 +3,7 @@ var bufferutils = require('./bufferutils')
 var ops = require('./opcodes')
 var scripts = require('./scripts')
 
+var Address = require('./address')
 var ECPair = require('./ecpair')
 var ECSignature = require('./ecsignature')
 var Script = require('./script')
@@ -190,6 +191,16 @@ TransactionBuilder.prototype.addOutput = function (scriptPubKey, value) {
 
     return (input.hashType & 0x1f) === Transaction.SIGHASH_SINGLE
   }), 'No, this would invalidate signatures')
+
+  // Attempt to get a valid address if it's a base58 address string
+  if (typeof scriptPubKey === 'string') {
+    scriptPubKey = Address.fromBase58Check(scriptPubKey)
+  }
+
+  // Attempt to get a valid script if it's an Address object
+  if (scriptPubKey instanceof Address) {
+    scriptPubKey = scriptPubKey.toOutputScript()
+  }
 
   return this.tx.addOutput(scriptPubKey, value)
 }
