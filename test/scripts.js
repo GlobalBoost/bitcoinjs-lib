@@ -4,7 +4,7 @@ var assert = require('assert')
 var ops = require('../src/opcodes')
 var scripts = require('../src/scripts')
 
-var ECPubKey = require('../src/ecpubkey')
+var ECPair = require('../src/ecpair')
 var Script = require('../src/script')
 
 var fixtures = require('./fixtures/scripts.json')
@@ -140,8 +140,7 @@ describe('Scripts', function () {
       if (f.type !== 'pubkey') return
 
       it('returns ' + f.scriptPubKey, function () {
-        var pubKey = ECPubKey.fromHex(f.pubKey)
-
+        var pubKey = new Buffer(f.pubKey, 'hex')
         var scriptPubKey = scripts.pubKeyOutput(pubKey)
         assert.equal(scriptPubKey.toASM(), f.scriptPubKey)
       })
@@ -152,7 +151,7 @@ describe('Scripts', function () {
     fixtures.valid.forEach(function (f) {
       if (f.type !== 'pubkeyhash') return
 
-      var pubKey = ECPubKey.fromHex(f.pubKey)
+      var pubKey = new Buffer(f.pubKey, 'hex')
 
       it('returns ' + f.scriptSig, function () {
         var signature = new Buffer(f.signature, 'hex')
@@ -167,8 +166,8 @@ describe('Scripts', function () {
     fixtures.valid.forEach(function (f) {
       if (f.type !== 'pubkeyhash') return
 
-      var pubKey = ECPubKey.fromHex(f.pubKey)
-      var address = pubKey.getAddress()
+      var pubKey = new Buffer(f.pubKey, 'hex')
+      var address = ECPair.fromPublicKeyBuffer(pubKey).getAddress()
 
       it('returns ' + f.scriptPubKey, function () {
         var scriptPubKey = scripts.pubKeyHashOutput(address.hash)
@@ -192,7 +191,7 @@ describe('Scripts', function () {
     })
 
     fixtures.invalid.multisigInput.forEach(function (f) {
-      var pubKeys = f.pubKeys.map(ECPubKey.fromHex)
+      var pubKeys = f.pubKeys.map(function (p) { return new Buffer(p, 'hex') })
       var scriptPubKey = scripts.multisigOutput(pubKeys.length, pubKeys)
 
       it('throws on ' + f.exception, function () {
@@ -211,7 +210,7 @@ describe('Scripts', function () {
     fixtures.valid.forEach(function (f) {
       if (f.type !== 'multisig') return
 
-      var pubKeys = f.pubKeys.map(ECPubKey.fromHex)
+      var pubKeys = f.pubKeys.map(function (p) { return new Buffer(p, 'hex') })
       var scriptPubKey = scripts.multisigOutput(pubKeys.length, pubKeys)
 
       it('returns ' + f.scriptPubKey, function () {
@@ -220,7 +219,9 @@ describe('Scripts', function () {
     })
 
     fixtures.invalid.multisigOutput.forEach(function (f) {
-      var pubKeys = f.pubKeys.map(ECPubKey.fromHex)
+      var pubKeys = f.pubKeys.map(function (p) {
+        return new Buffer(p, 'hex')
+      })
 
       it('throws on ' + f.exception, function () {
         assert.throws(function () {
