@@ -372,21 +372,19 @@ TransactionBuilder.prototype.sign = function (index, privKey, redeemScript, hash
   var signatureHash = this.tx.hashForSignature(index, signatureScript, hashType)
 
   if (input.scriptType === 'multisig' && input.redeemScript && input.signatures.length !== input.pubKeys.length) {
-    // store signatures locally
-    var _signatures = input.signatures.slice()
+    input.signatures = input.pubKeys.map(function (pubKey, i) {
+      var allowed = input.signatures.slice(i)
+      var match
 
-    // loop over pubKeys to set their respective signature or set it to OP_0
-    input.signatures = input.pubKeys.map(function (pubKey) {
-      var signature = null
-      _signatures.forEach(function (_signature, _sigIdx) {
-        // check if the signature is not null / false / OP_0 and verify if it belongs to the pubKey
-        if (!signature && _signature && pubKey.verify(signatureHash, _signature)) {
-          // use .splice to remove the signature from the list, so we won't verify it again
-          signature = _signatures.splice(_sigIdx, 1)[0]
-        }
+      // check for any matching signatures
+      allowed.some(function (signature) {
+        if (!pubKey.verify(signatureHash, signature)) return false
+        match = signature
+
+        return true
       })
 
-      return signature || ops.OP_0
+      return match || undefined
     })
   }
 
